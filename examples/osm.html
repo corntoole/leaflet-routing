@@ -5,7 +5,7 @@
   <title>Load Leaflet Route</title>
   <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css" />
   <!--[if lte IE 8]><link rel="stylesheet" href="libs/leaflet/leaflet.ie.css" /><![endif]-->
-  
+
   <link rel="stylesheet" href="http://simonwhitaker.github.io/github-fork-ribbon-css/gh-fork-ribbon.css" />
   <!--[if IE]><link rel="stylesheet" href="http://simonwhitaker.github.io/github-fork-ribbon-css/gh-fork-ribbon.ie.css" /><![endif]-->
 
@@ -23,10 +23,22 @@
   </script>
 </head>
 <body>
+  <div id="container">
+    <ol id="exports_lst">
+      
+    </ol>
+  </div>
   <div id="map"></div>
 
   <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
   <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
+  <script src="../bower_components/esri-leaflet/dist/esri-leaflet.js">
+
+  </script>
+  <script src="../bower_components/L.GeoSearch/src/js/l.control.geosearch.js"></script>
+  <script src="../bower_components/L.GeoSearch/src/js/l.geosearch.provider.openstreetmap.js"></script>
+  <link rel="stylesheet" href="../bower_components/L.GeoSearch/src/css/l.geosearch.css" />
+
   <script src="../src/utils/LineUtil.Snapping.js"></script>
   <script src="../src/utils/Marker.Snapping.js"></script>
   <script src="../src/L.Routing.js"></script>
@@ -38,10 +50,16 @@
     var gk, topo, thunderforest, osm, waymarkedtrails;
 
     gk = 'http://opencache.statkart.no/gatekeeper/gk';
-    topo = L.tileLayer(gk + '/gk.open_gmaps?layers=topo2&zoom={z}&x={x}&y={y}', {
-      maxZoom: 16,
-      attribution: 'tiles &copy; <a href="http://www.statkart.no/">Statens kartverk</a>'
-    });
+    // topo = L.tileLayer(gk + '/gk.open_gmaps?layers=topo2&zoom={z}&x={x}&y={y}', {
+    //   maxZoom: 16,
+    //   attribution: 'tiles &copy; <a href="http://www.statkart.no/">Statens kartverk</a>'
+    // });
+    var attribution = '<a href="http://www.doi.gov">U.S. Department of the Interior</a> | <a href="http://www.usgs.gov">U.S. Geological Survey</a> | <a href="http://www.usgs.gov/laws/policies_notices.html">Policies</a>';
+    topo = L.tileLayer('http://basemap.nationalmap.gov/ArcGIS/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 14,
+                attribution: attribution
+                });
+    // topo = L.esri.tiledMapLayer("http://basemap.nationalmap.gov/ArcGIS/rest/services/USGSTopo/MapServer");
 
     thunderforest = new L.TileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
       maxZoom: 18,
@@ -62,10 +80,14 @@
     });
 
     map = new L.Map('map', {
-      layers: [topo]
-      ,center: new L.LatLng(61.49964563794811, 8.721771240234375)
-      ,zoom: 13
+      layers: [osm]
+      ,center: new L.LatLng(33.2140278,-87.5413305)
+      ,zoom: 16
     });
+
+    new L.Control.GeoSearch({
+      provider: new L.GeoSearch.Provider.OpenStreetMap()
+    }).addTo(map);
 
     L.control.layers({
         'Topo (Kartverket)': topo,
@@ -138,17 +160,64 @@
         layers: [snapping]
         ,sensitivity: 15
         ,vertexonly: false
-      }
+      },
+      shortcut: {
+        draw: {
+          enable: 68,      // char code for 'd'
+          disable: 81      // char code for 'q'
+       }
+     }
     });
     map.addControl(routing);
-    routing.draw()
+    routing.draw();
+
+    var routeInfo = L.control();
+
+    routeInfo.onAdd = function(map) {
+      this._div = L.DomUtil.create('div', 'route-info'); // create a div with class "route-info"
+      this.update();
+      return this._div;
+    };
+
+    routeInfo.update = function()
+    {
+      this._div.innerHTML = '<button class="btn button" id="log-route-info-btn">Log Route Information</button>' 
+        + '<br><button class="btn button" id="clear-routes-btn">Clear Route</button>';
+    }
+    console.log($('#log-route-info-btn'));
+
+    routeInfo.addTo(map);
+    
+    var clearRoute = function() {
+      while (routing.getLast() !== null) 
+      { 
+        var lst = routing.getLast(); 
+        routing.removeWaypoint(lst, function(){
+          console.log('cleared: ', lst);
+          }); 
+      }
+    };
+    
+
+    var exportCount = 0;
+    $('#log-route-info-btn').on('click', function(){
+      var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(routing.toPolyline()));
+      // console.log(data);
+      exportCount++;
+      $('<li><a href="data:' + data + '" download="data' + exportCount + '.json">download JSON</a></li>').appendTo('#exports_lst');
+      // routeInfo.update();
+    });
+
+    $('#clear-routes-btn').on('click', function(){
+      clearRoute();
+    });
   </script>
-  
+
   <!-- CSS GitHub ribbon by Simon Whitaker https://github.com/simonwhitaker/github-fork-ribbon-css -->
-  <div class="github-fork-ribbon-wrapper left-bottom">
+  <!-- <div class="github-fork-ribbon-wrapper left-bottom">
     <div class="github-fork-ribbon">
       <a href="https://github.com/Turistforeningen/leaflet-routing">Fork me on GitHub</a>
     </div>
-  </div>
+  </div> -->
 </body>
 </html>
