@@ -31,19 +31,16 @@
   <script src="../src/L.Routing.Draw.js"></script>
   <script src="../src/L.Routing.Edit.js"></script>
   <script type="text/javascript">
-    $.getJSON( "route.geojson", function( geojson ) {
+    $.getJSON( "data.geojson", function( geojson ) {
       delete geojson.properties.waypoints;
 
-      var gk, topo;
-
-      gk = 'http://opencache.statkart.no/gatekeeper/gk';
-      topo = L.tileLayer(gk + '/gk.open_gmaps?layers=topo2&zoom={z}&x={x}&y={y}', {
-        maxZoom: 16,
-        attribution: '<a href="http://www.statkart.no/">Statens kartverk</a>'
+      osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: 'tiles &copy; <a target="_blank" href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       });
 
       map = new L.Map('map', {
-        layers: [topo]
+        layers: [osm]
         ,center: new L.LatLng(61.5, 9)
         ,zoom: 13
       });
